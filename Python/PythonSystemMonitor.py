@@ -103,14 +103,4 @@ time.sleep(1) #give the connection a second to settle
 while True:
     sendData(transfer_rate)
     time.sleep(1)
-    #while True:
-    #    try:
-    #        print ("Attempt to Read")
-    #        readOut = arduino.readline().decode('ascii')
-    #        time.sleep(1)
-    #        print ("Reading: ", readOut) 
-    #       break
-    #    except:
-    #        pass
-    #print ("Restart")
     arduino.flush() #flush the buffer
