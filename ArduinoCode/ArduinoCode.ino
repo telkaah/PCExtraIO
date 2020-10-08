@@ -71,15 +71,16 @@ void setup() {
   pinMode(buttonThreePin, INPUT_PULLUP);
 
   encoder = new ClickEncoder(ENCODER_PINA, ENCODER_PINB, ENCODER_BTN, 4, LOW);
+
+  //Initialize button state to not trigger on startup
+  lastButtonOneState = digitalRead(buttonOnePin);
+  lastButtonTwoState = digitalRead(buttonTwoPin);
+  lastButtonThreeState = digitalRead(buttonThreePin);
+  lastEncoderButtonState = digitalRead(ENCODER_BTN);
+  
   Timer1.initialize(1000);
   Timer1.attachInterrupt(timerIsr); 
   last = -1;
-
-  //Initialize button state to not trigger on startup
-  int lastButtonOneState = digitalRead(buttonOnePin);
-  int lastButtonTwoState = digitalRead(buttonTwoPin);
-  int lastButtonThreeState = digitalRead(buttonThreePin);
-  int lastEncoderButtonState = digitalRead(ENCODER_BTN);
   
   // initialize and clear display
   display.begin(SSD1306_SWITCHCAPVCC, OLED_ADDR);
