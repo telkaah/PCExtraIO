@@ -1,7 +1,6 @@
 # PCExtraIO
+![alt text](https://github.com/telkaah/PCExtraIO/blob/main/projectImg.png)
 Arduino, Python and Autohotkey software to create a macro key box with screen
-
-https://github.com/telkaah/PCExtraIO/blob/main/projectImg.png
 
 Partlist:
 Arduino Pro Micro
