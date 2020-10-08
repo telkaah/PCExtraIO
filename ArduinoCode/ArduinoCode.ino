@@ -22,10 +22,9 @@ Adafruit_SSD1306 display(-1);
 #define ENCODER_BTN      4
 ClickEncoder *encoder;
 int16_t last, value;
-void timerIsr() {
-  encoder->service();
-  handleRotary();
-}
+
+// Loop counter
+int loopCounter = 0;
 
 // Button setup
 const int  buttonOnePin = 5;    // the pin that the pushbutton is attached to
@@ -59,6 +58,10 @@ String getValue(String data, char separator, int index)
     return found > index ? data.substring(strIndex[0], strIndex[1]) : "";
 }
 
+void timerIsr() {
+    encoder->service();
+}
+
 void setup() {
   Serial.begin(115200);
 
@@ -77,7 +80,8 @@ void setup() {
   lastButtonOneState = digitalRead(buttonOnePin);
   lastButtonTwoState = digitalRead(buttonTwoPin);
   lastButtonThreeState = digitalRead(buttonThreePin);
-  
+
+  // Microseconds
   Timer1.initialize(1000);
   Timer1.attachInterrupt(timerIsr); 
   last = -1;
@@ -89,29 +93,27 @@ void setup() {
 }
 
 void loop() {
-   // Play pause
-  handleButton(buttonThreePin, lastButtonThreeState, MEDIA_PLAY_PAUSE, MEDIA_PLAY_PAUSE);
-  
-    // Lock
-  handleLockButton(buttonTwoPin, lastButtonTwoState);
-  
-  // Audio
-  handleMacroButton(buttonOnePin, lastButtonOneState);
-  
-  // Mute
-  ClickEncoder::Button b = encoder->getButton();
-  if (b != ClickEncoder::Open) {
-    switch (b) {
-      case ClickEncoder::Clicked:
-        Consumer.write(MEDIA_VOL_MUTE);
-        break;
+     // Play pause
+    handleButton(buttonThreePin, lastButtonThreeState, MEDIA_PLAY_PAUSE, MEDIA_PLAY_PAUSE);
+    
+      // Lock
+    handleLockButton(buttonTwoPin, lastButtonTwoState);
+    
+    // Audio
+    handleMacroButton(buttonOnePin, lastButtonOneState);
+    
+    // Handle rotary
+    handleRotary();
+    
+    // Get data from pc and update screen
+    loopCounter = loopCounter + 1;
+    if(loopCounter==100){
+      handlePcConnection();
+      loopCounter=0;
     }
-  }
-  
-  // Get data from pc and update screen
-  handlePcConnection();
-  Serial.println("loop");
-  delay(50);
+    
+    Serial.println("loop");
+    delay(50);
 }
 
 void handlePcConnection(){
@@ -214,7 +216,6 @@ void drawGraph2(int newValue){
 void handleButton(int buttonPin, int & lastButtonState, ConsumerKeycode onKey, ConsumerKeycode offKey){
   int buttonState = digitalRead(buttonPin);
   if (buttonState != lastButtonState) {
-    Serial.println("Enter change state");
     if (buttonState == LOW) {
       Consumer.write(onKey);
     } else {
@@ -289,14 +290,15 @@ void handleRotary(){
       Consumer.write(MEDIA_VOL_UP);
     }
     last = value;
-    Serial.print("Encoder Value: ");
-    Serial.println(value);
   }
 
+  // Mute
   ClickEncoder::Button b = encoder->getButton();
   if (b != ClickEncoder::Open) {
-    if(b == ClickEncoder::Clicked){
-      Consumer.write(MEDIA_VOLUME_MUTE);
+    switch (b) {
+      case ClickEncoder::Clicked:
+        Consumer.write(MEDIA_VOL_MUTE);
+        break;
     }
-  }  
+  }
 }
