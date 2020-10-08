@@ -34,7 +34,6 @@ const int  buttonTwoPin = 8;
 int lastButtonTwoState = 0;
 const int  buttonThreePin = 9;
 int lastButtonThreeState = 0;
-int lastEncoderButtonState = 0;
 
 // Keyboard keys
 const char ctrlKey = KEY_LEFT_CTRL;// for windows
@@ -70,13 +69,14 @@ void setup() {
   pinMode(buttonTwoPin, INPUT_PULLUP);
   pinMode(buttonThreePin, INPUT_PULLUP);
 
-  encoder = new ClickEncoder(ENCODER_PINA, ENCODER_PINB, ENCODER_BTN, 4, LOW);
+  encoder = new ClickEncoder(ENCODER_PINA, ENCODER_PINB, ENCODER_BTN, 2, LOW);
+  // Enable acceleration of rotary encoder
+  //encoder->setAccelerationEnabled(true);
 
   //Initialize button state to not trigger on startup
   lastButtonOneState = digitalRead(buttonOnePin);
   lastButtonTwoState = digitalRead(buttonTwoPin);
   lastButtonThreeState = digitalRead(buttonThreePin);
-  lastEncoderButtonState = digitalRead(ENCODER_BTN);
   
   Timer1.initialize(1000);
   Timer1.attachInterrupt(timerIsr); 
@@ -89,27 +89,34 @@ void setup() {
 }
 
 void loop() {
-	//handleRotary();
    // Play pause
   handleButton(buttonThreePin, lastButtonThreeState, MEDIA_PLAY_PAUSE, MEDIA_PLAY_PAUSE);
+  
     // Lock
   handleLockButton(buttonTwoPin, lastButtonTwoState);
+  
   // Audio
   handleMacroButton(buttonOnePin, lastButtonOneState);
-
-  handleButton(ENCODER_BTN, lastEncoderButtonState, MEDIA_VOL_MUTE, MEDIA_VOL_MUTE);
-
-  handlePcConnection();
   
-  i = rand() % 100 + 1; 
-  //updateScreen(i, 100-i, i, 100-i, i);
+  // Mute
+  ClickEncoder::Button b = encoder->getButton();
+  if (b != ClickEncoder::Open) {
+    switch (b) {
+      case ClickEncoder::Clicked:
+        Consumer.write(MEDIA_VOL_MUTE);
+        break;
+    }
+  }
+  
+  // Get data from pc and update screen
+  handlePcConnection();
+  Serial.println("loop");
   delay(50);
 }
 
 void handlePcConnection(){
     if(Serial.available() > 0) {
       String serialResponse = Serial.readStringUntil('\r\n');
-      Serial.println(serialResponse);
       String upload = getValue(serialResponse, ',', 0);
       String download = getValue(serialResponse, ',', 1);
       String cpu = getValue(serialResponse, ',', 2);
@@ -134,7 +141,6 @@ void noConnectionScreen(){
   display.display();
 }
 
-// i from 0 - 100
 void updateScreen(int cpu, int mem, String dl, String ul){
   display.clearDisplay();
   
@@ -167,8 +173,6 @@ void updateScreen(int cpu, int mem, String dl, String ul){
   String ulText = "UL: ";
   String ulFinalText = ulText + ul + kbs; 
   display.print(ulFinalText);
-
-  //display.startscrollright(0x00, 0x0F);
 
   // update display with all of the above graphics
   display.display();
