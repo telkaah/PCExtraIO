@@ -59,7 +59,11 @@ String getValue(String data, char separator, int index)
 }
 
 void timerIsr() {
+    noInterrupts();
     encoder->service();
+    // Handle rotary
+    handleRotary();
+    interrupts();
 }
 
 void setup() {
@@ -72,7 +76,7 @@ void setup() {
   pinMode(buttonTwoPin, INPUT_PULLUP);
   pinMode(buttonThreePin, INPUT_PULLUP);
 
-  encoder = new ClickEncoder(ENCODER_PINA, ENCODER_PINB, ENCODER_BTN, 2, LOW);
+  encoder = new ClickEncoder(ENCODER_PINA, ENCODER_PINB, ENCODER_BTN, 4, LOW);
   // Enable acceleration of rotary encoder
   //encoder->setAccelerationEnabled(true);
 
@@ -92,7 +96,7 @@ void setup() {
   display.display();
 }
 
-void loop() {
+void loop() {  
      // Play pause
     handleButton(buttonThreePin, lastButtonThreeState, MEDIA_PLAY_PAUSE, MEDIA_PLAY_PAUSE);
     
@@ -101,19 +105,19 @@ void loop() {
     
     // Audio
     handleMacroButton(buttonOnePin, lastButtonOneState);
-    
-    // Handle rotary
-    handleRotary();
-    
-    // Get data from pc and update screen
-    loopCounter = loopCounter + 1;
-    if(loopCounter==100){
-      handlePcConnection();
-      loopCounter=0;
+
+    // Mute
+    ClickEncoder::Button b = encoder->getButton();
+    if (b != ClickEncoder::Open) {
+      switch (b) {
+        case ClickEncoder::Clicked:
+          Consumer.write(MEDIA_VOL_MUTE);
+          break;
+      }
     }
-    
-    Serial.println("loop");
-    delay(50);
+        
+    // Get data from pc and update screen
+    handlePcConnection();
 }
 
 void handlePcConnection(){
@@ -177,6 +181,7 @@ void updateScreen(int cpu, int mem, String dl, String ul){
   display.print(ulFinalText);
 
   // update display with all of the above graphics
+  
   display.display();
 }
 
@@ -214,7 +219,9 @@ void drawGraph2(int newValue){
 }
 
 void handleButton(int buttonPin, int & lastButtonState, ConsumerKeycode onKey, ConsumerKeycode offKey){
+  noInterrupts();
   int buttonState = digitalRead(buttonPin);
+  interrupts();
   if (buttonState != lastButtonState) {
     if (buttonState == LOW) {
       Consumer.write(onKey);
@@ -228,7 +235,9 @@ void handleButton(int buttonPin, int & lastButtonState, ConsumerKeycode onKey, C
 }
 
 void handleMacroButton(int buttonPin, int & lastButtonState){
+  noInterrupts();
   int buttonState = digitalRead(buttonPin);
+  interrupts();
   if (buttonState != lastButtonState) {
     if (buttonState == LOW) {
       Keyboard.press(KEY_LEFT_CTRL);
@@ -258,7 +267,9 @@ void handleMacroButton(int buttonPin, int & lastButtonState){
 }
 
 void handleLockButton(int buttonPin, int & lastButtonState){
+  noInterrupts();
   int buttonState = digitalRead(buttonPin);
+  interrupts();
   if (buttonState != lastButtonState) {
     if (buttonState == LOW) {
       Keyboard.press(KEY_LEFT_GUI);
@@ -282,23 +293,17 @@ void handleLockButton(int buttonPin, int & lastButtonState){
 
 void handleRotary(){
   value += encoder->getValue();
-  
   if (value != last) {
+    bool up = true;
     if(last>value){
+      up = false;
+    }
+    // Important order, consumer might take too long to process that we get another interupt creating spamming of wire
+    last = value;
+    if(up){
       Consumer.write(MEDIA_VOL_DOWN);
     }else{
       Consumer.write(MEDIA_VOL_UP);
-    }
-    last = value;
-  }
-
-  // Mute
-  ClickEncoder::Button b = encoder->getButton();
-  if (b != ClickEncoder::Open) {
-    switch (b) {
-      case ClickEncoder::Clicked:
-        Consumer.write(MEDIA_VOL_MUTE);
-        break;
     }
   }
 }
