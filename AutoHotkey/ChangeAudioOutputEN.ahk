@@ -1,16 +1,15 @@
 +^!A::
 	Run, mmsys.cpl
 	WinWait,Sound
-	ControlSend,SysListView321,{Down 1}
-	ControlClick,&Default
+	ControlSend,SysListView321,{Down 5}
+	ControlClick,&Set Default
 	ControlClick,OK
-	Return
+	return
 
 +^!B::
 	Run, mmsys.cpl
 	WinWait,Sound
-	ControlSend,SysListView321,{Down 2}
-	ControlClick,&Default
+	ControlSend,SysListView321,{Down 7}
+	ControlClick,&Set Default
 	ControlClick,OK
-	Reload
-	Return
+	return

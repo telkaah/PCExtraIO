@@ -301,9 +301,9 @@ void handleRotary(){
     // Important order, consumer might take too long to process that we get another interupt creating spamming of wire
     last = value;
     if(up){
-      Consumer.write(MEDIA_VOL_DOWN);
-    }else{
       Consumer.write(MEDIA_VOL_UP);
+    }else{
+      Consumer.write(MEDIA_VOL_DOWN);
     }
   }
 }
